@@ -1,9 +1,13 @@
-Criando o banco de dados
+# Projeto de Banco de Dados: INTUITIVE
 
-CREATE TABLE INTUITIVE
+Este projeto tem como objetivo a criação e manipulação de dados relacionados a operadoras de saúde e demonstrações contábeis. O banco de dados foi projetado para armazenar informações sobre operadoras, dados financeiros e relatórios de despesas, permitindo consultas detalhadas sobre as maiores despesas e outros dados financeiros.
 
-Criando as tabelas para inserir os dados necessários para as operações;
+## Estrutura do Banco de Dados
 
+### Tabela `OPERADORAS`
+Esta tabela armazena os dados das operadoras de saúde. A criação da tabela pode ser feita com o seguinte comando SQL:
+
+```sql
 CREATE TABLE OPERADORAS(
 	REGISTRO_ANS INT PRIMARY KEY,
 	CNPJ VARCHAR(14),
@@ -26,9 +30,12 @@ CREATE TABLE OPERADORAS(
 	REGIAO_DE_COMERCIALIZACAO VARCHAR(150),
 	DATA_REGISTRO_ANS DATE
 );
+Tabela Temporária DADOS
+Esta tabela é usada para armazenar temporariamente os dados financeiros antes de serem transferidos para a tabela permanente DEMONSTRACOES.
 
-Vamos criar uma Tabela temporaria
-
+sql
+Copiar
+Editar
 CREATE TEMPORARY TABLE DADOS(
 	DATA_REFERENCIA DATE,
 	REG_ANS INT,
@@ -37,11 +44,13 @@ CREATE TEMPORARY TABLE DADOS(
 	VALOR_SALDO_INICIAL VARCHAR(20),
 	VALOR_SALDO_FINAL VARCHAR(20)
 );
+Tabela Permanente DEMONSTRACOES
+Esta tabela armazena os dados financeiros de forma permanente após a transformação dos dados da tabela temporária DADOS.
 
-
-Agora vamos criar uma tabela permanente para armazenar os dados
-
-        CREATE TABLE DEMONSTRACOES(
+sql
+Copiar
+Editar
+CREATE TABLE DEMONSTRACOES(
 	ID SERIAL PRIMARY KEY,
 	DATA_REFERENCIA DATE,
 	REG_ANS INT NOT NULL,
@@ -50,39 +59,49 @@ Agora vamos criar uma tabela permanente para armazenar os dados
 	VALOR_SALDO_INICIAL NUMERIC,
 	VALOR_SALDO_FINAL NUMERIC
 );
+Carregamento de Dados
+Importação dos dados CSV para a Tabela DADOS
+Para carregar os dados financeiros de 2023 e 2024, você pode usar os seguintes comandos COPY para cada trimestre:
 
-
-Copiando os dados CSV para a tabela DADOS de 2023 e 2024
-2023
+sql
+Copiar
+Editar
 COPY DADOS 
 FROM 'D:\Intuitive\1T2023.csv'  
 DELIMITER ';' 
 CSV HEADER;
+Alterando o nome do arquivo conforme o trimestre:
 
-O resto dos arquivos so mudo o nome do Arquivo CSV'1T2023, 2t2023, 3T2023 e 4T2023.
-A mesma situação com os arquivos de 2024
+1T2023.csv, 2T2023.csv, 3T2023.csv, 4T2023.csv
 
-COPY DADOS 
-FROM 'D:\Intuitive\1T2024.csv'  
-DELIMITER ';' 
-CSV HEADER;
+1T2024.csv, 2T2024.csv, 3T2024.csv, 4T2024.csv
 
-Adicionando o arquivo de relatorio no mysql
+Importação dos dados da Tabela OPERADORAS
+Carregar os dados das operadoras a partir de um arquivo CSV:
 
+sql
+Copiar
+Editar
 COPY OPERADORAS
 FROM 'D:\Relatorio.csv'  
 DELIMITER ';' 
 CSV HEADER;
+Transformação de Dados
+Antes de transferir os dados da tabela temporária DADOS para a tabela permanente DEMONSTRACOES, realizamos uma transformação para garantir que os valores numéricos usem o ponto (.) em vez da vírgula (,):
 
-
-Realizei as transformações da tabela dados, trocando a ',' por '.'
-
+sql
+Copiar
+Editar
 UPDATE DADOS
 SET VALOR_SALDO_INICIAL = REPLACE(VALOR_SALDO_INICIAL, ',', '.'),
 	VALOR_SALDO_FINAL = REPLACE(VALOR_SALDO_FINAL, ',', '.');
+Inserção de Dados na Tabela Permanente
+Após a transformação, os dados são inseridos na tabela DEMONSTRACOES:
 
-Inserindo os dados transformados na tabela DEMONSTRACOES
-INSERT INTO DEMONSTRACOES_CONTABEIS (DATA_REFERENCIA, REG_ANS, CD_CONTA_CONTABIL, DESCRICAO, VALOR_SALDO_INICIAL, VALOR_SALDO_FINAL)
+sql
+Copiar
+Editar
+INSERT INTO DEMONSTRACOES (DATA_REFERENCIA, REG_ANS, CD_CONTA_CONTABIL, DESCRICAO, VALOR_SALDO_INICIAL, VALOR_SALDO_FINAL)
 SELECT
 	DATA_REFERENCIA,
 	REG_ANS,
@@ -91,29 +110,37 @@ SELECT
 	CAST(VALOR_SALDO_INICIAL AS NUMERIC),
 	CAST(VALOR_SALDO_FINAL AS NUMERIC)
 FROM TEMP_DADOS;
+Remoção da Tabela Temporária
+Após a inserção dos dados na tabela permanente, a tabela temporária DADOS é removida:
 
-REMOVENDO A TABELA DADOS
-
+sql
+Copiar
+Editar
 DROP TABLE DADOS;
-
-Quais as 10 operadoras com maiores despesas em "EVENTOS/ SINISTROS CONHECIDOS OU 
-AVISADOS DE ASSISTÊNCIA A SAÚDE MEDICO HOSPITALAR" no último trimestre? 
-
+Consultas SQL
+Consultar as 10 Operadoras com Maiores Despesas no Último Trimestre
+sql
+Copiar
+Editar
 SELECT O.RAZAO_SOCIAL, SUM(D.VALOR_SALDO_FINAL)
 FROM DEMONSTRACOES D
 INNER JOIN OPERADORAS O ON O.REGISTRO_ANS = D.REG_ANS
-WHERE D.DESCRICAO = 'EVENTOS/ SINISTROS CONHECIDOS OU AVISADOS  DE ASSISTÊNCIA A SAÚDE MEDICO HOSPITALAR '
+WHERE D.DESCRICAO = 'EVENTOS/ SINISTROS CONHECIDOS OU AVISADOS DE ASSISTÊNCIA A SAÚDE MEDICO HOSPITALAR'
 	AND D.DATA_REFERENCIA BETWEEN '2024-10-01' AND '2024-12-31'
 GROUP BY O.RAZAO_SOCIAL
 ORDER BY SUM(D.VALOR_SALDO_FINAL) DESC
 LIMIT 10;
-
-Quais as 10 operadoras com maiores despesas nessa categoria no último ano? 
+Consultar as 10 Operadoras com Maiores Despesas no Último Ano
+sql
+Copiar
+Editar
 SELECT O.RAZAO_SOCIAL, SUM(D.VALOR_SALDO_FINAL)
 FROM DEMONSTRACOES D
 INNER JOIN OPERADORAS O ON O.REGISTRO_ANS = D.REG_ANS
-WHERE D.DESCRICAO = 'EVENTOS/ SINISTROS CONHECIDOS OU AVISADOS  DE ASSISTÊNCIA A SAÚDE MEDICO HOSPITALAR '
+WHERE D.DESCRICAO = 'EVENTOS/ SINISTROS CONHECIDOS OU AVISADOS DE ASSISTÊNCIA A SAÚDE MEDICO HOSPITALAR'
 	AND D.DATA_REFERENCIA BETWEEN '2023-01-01' AND '2023-12-31'
 GROUP BY O.RAZAO_SOCIAL
 ORDER BY SUM(D.VALOR_SALDO_FINAL) DESC
 LIMIT 10;
+Conclusão
+Este projeto foi desenvolvido para facilitar o gerenciamento e a consulta de dados financeiros de operadoras de saúde. Utilizando o banco de dados relacional, é possível realizar consultas detalhadas sobre as despesas de operadoras em categorias específicas, permitindo análises eficientes.
