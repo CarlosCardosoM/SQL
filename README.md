@@ -159,5 +159,3 @@ LIMIT 10;
 
 Este projeto foi desenvolvido para facilitar o gerenciamento e a consulta de dados financeiros de operadoras de saúde. Utilizando o banco de dados relacional, é possível realizar consultas detalhadas sobre as despesas de operadoras em categorias específicas, permitindo análises eficientes.
 ```
-
-Agora, você pode copiar o conteúdo acima e colar diretamente no seu arquivo `README.md`. Ele está pronto para ser usado no seu projeto!
