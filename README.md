@@ -30,3 +30,29 @@ CREATE TABLE OPERADORAS(
 	REGIAO_DE_COMERCIALIZACAO VARCHAR(150),
 	DATA_REGISTRO_ANS DATE
 );
+## Tabela Temporária DADOS
+Esta tabela é usada para armazenar temporariamente os dados financeiros antes de serem transferidos para a tabela permanente DEMONSTRACOES.
+```sql
+CREATE TEMPORARY TABLE DADOS(
+	DATA_REFERENCIA DATE,
+	REG_ANS INT,
+	CD_CONTA_CONTABIL VARCHAR(20),
+	DESCRICAO VARCHAR(200),
+	VALOR_SALDO_INICIAL VARCHAR(20),
+	VALOR_SALDO_FINAL VARCHAR(20)
+);
+## Tabela Permanente DEMONSTRACOES
+Esta tabela armazena os dados financeiros de forma permanente após a transformação dos dados da tabela temporária DADOS.
+```sql
+CREATE TABLE DEMONSTRACOES(
+	ID SERIAL PRIMARY KEY,
+	DATA_REFERENCIA DATE,
+	REG_ANS INT NOT NULL,
+	CD_CONTA_CONTABIL VARCHAR(20),
+	DESCRICAO VARCHAR(200),
+	VALOR_SALDO_INICIAL NUMERIC,
+	VALOR_SALDO_FINAL NUMERIC
+);
+
+
+
